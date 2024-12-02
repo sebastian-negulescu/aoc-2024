@@ -1,15 +1,14 @@
 #include "questions.h"
 
-#include <iostream>
+#include <string>
 #include <fstream>
 
-int main() {
-    std::cout << "hello, world!" << std::endl;
-
+int main(int argc, char * argv[]) {
+    std::string filename = argv[1];
     std::ifstream input_file;
-    input_file.open("input.txt");
+    input_file.open(filename);
 
-    q1(input_file);
+    q2(input_file);
 
     input_file.close();
 }

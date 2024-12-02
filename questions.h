@@ -4,6 +4,7 @@
 #include <fstream>
 
 void q1(std::ifstream &input_file);
+void q2(std::ifstream &input_file);
 
 #endif
 
