@@ -1,3 +1,3 @@
-input.txt
+input/*
 aoc
 *.o
