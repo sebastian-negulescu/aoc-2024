@@ -12,7 +12,7 @@ int move_guard(
     unsigned int guard_dir,
     std::vector<std::pair<unsigned int, unsigned int>> *guard_path
 ) {
-    int marked = 0;
+    int marked = 1;
     std::pair<unsigned int, unsigned int> next_guard_loc = guard_loc;
     unsigned int steps = 0;
     while (true) {
@@ -60,11 +60,7 @@ int move_guard(
         steps++;
     }
 
-    if (steps == 0 && marked == 0) {
-        marked = 1;
-    }
-
-    std::cout << marked << std::endl;
+    // std::cout << marked << std::endl;
     return marked;
 }
 
@@ -99,14 +95,6 @@ void q6(std::ifstream &input_file) {
         guard_dir %= 4;
     }
 
-    /*
-    for (auto map_line : map) {
-        std::cout << map_line << std::endl;
-    }
-
-    return;
-    */
-
     std::unordered_set<unsigned int> barriers;
     for (auto path_guard_loc : guard_path) {
         const unsigned int hashed_path_guard_loc = 
@@ -116,6 +104,7 @@ void q6(std::ifstream &input_file) {
             continue;
         }
 
+        // clear previous map
         for (size_t i = 0; i < map.size(); ++i) {
             for (size_t j = 0; j < map.size(); ++j) {
                 if (map[i][j] == 'X') {
@@ -124,24 +113,39 @@ void q6(std::ifstream &input_file) {
             }
         }
 
+        // insert obstacle
         map[path_guard_loc.first][path_guard_loc.second] = '#';
 
+        /*
+        // output map
         for (auto map_line : map) {
             std::cout << map_line << std::endl;
         }
+        */
 
+        // run and try to detect loop
         guard_dir = 0;
         guard_loc = initial_guard_loc;
         int result = 1;
-        while (result == 1) {
+        std::unordered_set<unsigned int> guard_locs;
+        while (result != -1) {
             result = move_guard(map, guard_loc, guard_dir, nullptr);
+            const unsigned int hashed_guard_loc = 
+                ((guard_loc.first * map[guard_loc.first].size() + guard_loc.second) << 4) | (1 << guard_dir);
+            if (guard_locs.contains(hashed_guard_loc)) {
+                barriers.insert(hashed_path_guard_loc);
+                break;
+            }
+            guard_locs.insert(hashed_guard_loc);
             guard_dir++;
             guard_dir %= 4;
         }
-        std::cout << result << std::endl;
+        // std::cout << result << std::endl;
+        /*
         if (result == 0) {
             barriers.insert(hashed_path_guard_loc);
         }
+        */
 
         map[path_guard_loc.first][path_guard_loc.second] = '.';
     }
