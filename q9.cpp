@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <vector>
+#include <list>
 #include <string>
 #include <sstream>
 
@@ -78,31 +79,48 @@ void q9(std::ifstream &input_file) {
     }
     std::cout << std::endl;
 
-    size_t free_spot = 0;
-    for (size_t i = expanded_layout.size() - 1; i >= 0; --i) {
-        if (expanded_layout[i] == -1) {
-            continue;
-        }
+    int id = -1;
+    size_t block_size = 0;
+    for (ssize_t i = expanded_layout.size() - 1; i >= 0; --i) {
+        if (expanded_layout[i] == id) {
+            block_size++;
+        } else if (id != -1) {
+            std::cout << i << " " << id << " " << block_size << std::endl;
+            // look to move block
+            int target_start = -1;
+            size_t target_size = 0;
+            for (size_t j = 0; j < expanded_layout.size(); ++j) {
+                if (j > i) {
+                    target_start = -1;
+                    break;
+                }
 
-        while (free_spot < expanded_layout.size()) {
-            if (expanded_layout[free_spot] == -1) {
-                break;
+                if (expanded_layout[j] == -1) {
+                    target_size++;
+                } else {
+                    target_size = 0;
+                }
+                if (target_size == block_size) {
+                    std::cout << "target size " << target_size << std::endl;
+                    target_start = j - (target_size - 1);
+                    break;
+                }
             }
-            free_spot++;
+
+            if (target_start != -1) {
+                std::cout << "moving to " << target_start << std::endl;
+                for (size_t j = 0; j < target_size; ++j) {
+                    expanded_layout[target_start + j] = expanded_layout[i + j + 1];
+                    expanded_layout[i + j + 1] = -1;
+                }
+            }
+
+            id = expanded_layout[i];
+            block_size = 1;
+        } else {
+            id = expanded_layout[i];
+            block_size = 1;
         }
-
-        // std::cout << free_spot << " " << i << std::endl;
-
-        if (free_spot >= expanded_layout.size()) {
-            break;
-        }
-
-        if (i < free_spot) {
-            break;
-        }
-
-        expanded_layout[free_spot] = expanded_layout[i];
-        expanded_layout[i] = -1;
     }
 
     unsigned long long checksum = 0;
