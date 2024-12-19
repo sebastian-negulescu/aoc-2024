@@ -20,14 +20,32 @@ enum states {
 };
 
 void flood_fill(
-    plot &p, 
+    plot &p,
     const std::vector< std::vector<char> > &garden,
     std::vector< std::vector<bool> > &garden_ghost,
-    size_t row,
-    size_t col
+    std::list< std::pair<size_t, size_t> > &plant_queue
 ) {
+    if (plant_queue.empty()) {
+        return;
+    }
+
+
+    size_t row, col;
+    do {
+        std::pair<size_t, size_t> plant_loc = plant_queue.front();
+        plant_queue.pop_front();
+
+        row = std::get<0>(plant_loc);
+        col = std::get<1>(plant_loc);
+    } while (garden_ghost[row][col] && !plant_queue.empty());
+
+    if (garden_ghost[row][col]) {
+        return;
+    }
+
     garden_ghost[row][col] = true;
 
+    p.perimiter += 4;
     p.area++;
     std::vector<states> directions(4, EMPTY);
 
@@ -132,6 +150,7 @@ void flood_fill(
     }
     std::cout << std::endl;
 
+    /*
     for (const auto &line : garden_ghost) {
         for (const auto &filled : line) {
             if (filled) {
@@ -143,27 +162,37 @@ void flood_fill(
         std::cout << std::endl;
     }
     std::cout << p.sides << std::endl;
+    */
 
     // up
     if (row > 0 && garden[row - 1][col] == p.plant_type && !garden_ghost[row - 1][col]) {
-        flood_fill(p, garden, garden_ghost, row - 1, col);
+        plant_queue.push_back(std::make_pair(row - 1, col));
+
+        // flood_fill(p, garden, garden_ghost, row - 1, col);
     }
 
     // left
     if (col < garden[row].size() - 1 && garden[row][col + 1] == p.plant_type && !garden_ghost[row][col + 1]) {
-        flood_fill(p, garden, garden_ghost, row, col + 1);
+        plant_queue.push_back(std::make_pair(row, col + 1));
+
+        // flood_fill(p, garden, garden_ghost, row, col + 1);
     }
 
     // down
     if (row < garden.size() - 1 && garden[row + 1][col] == p.plant_type && !garden_ghost[row + 1][col]) {
-        flood_fill(p, garden, garden_ghost, row + 1, col);
+        plant_queue.push_back(std::make_pair(row + 1, col));
+
+        // flood_fill(p, garden, garden_ghost, row + 1, col);
     }
     
     // right
     if (col > 0 && garden[row][col - 1] == p.plant_type && !garden_ghost[row][col - 1]) {
-        flood_fill(p, garden, garden_ghost, row, col - 1);
+        plant_queue.push_back(std::make_pair(row, col - 1));
+        // flood_fill(p, garden, garden_ghost, row, col - 1);
     }
-    
+
+
+    flood_fill(p, garden, garden_ghost, plant_queue);
 }
 
 void q12(std::ifstream &input_file) {
@@ -200,7 +229,9 @@ void q12(std::ifstream &input_file) {
                 p.area = 0;
                 p.sides = 0;
 
-                flood_fill(p, garden, garden_ghost, i, j);
+                std::list< std::pair<size_t, size_t> > plant_queue;
+                plant_queue.push_back(std::make_pair(i, j));
+                flood_fill(p, garden, garden_ghost, plant_queue);
                 plots.push_back(p);
             }
         }
@@ -210,7 +241,10 @@ void q12(std::ifstream &input_file) {
     std::cout << plots.size() << std::endl;
     for (const auto &p : plots) {
         total_price += p.area * p.sides;
-        std::cout << p.plant_type << " " << p.area << " " << p.sides << std::endl;
+        if (p.perimiter < p.sides) {
+            std::cout << "asdf" <<std::endl;
+        }
+        // std::cout << p.plant_type << " " << p.area << " " << p.perimiter << " " << p.sides << std::endl;
     }
 
     std::cout << total_price << std::endl;
