@@ -29,7 +29,6 @@ void flood_fill(
         return;
     }
 
-
     size_t row, col;
     do {
         std::pair<size_t, size_t> plant_loc = plant_queue.front();
@@ -48,10 +47,6 @@ void flood_fill(
     p.perimiter += 4;
     p.area++;
     std::vector<states> directions(4, EMPTY);
-
-    /*
-     * What do we do about the sides?
-     */
 
     unsigned int num_ners = 0;
     if (row > 0 && garden[row - 1][col] == p.plant_type && garden_ghost[row - 1][col]) {
@@ -72,6 +67,7 @@ void flood_fill(
             }
         }
     }
+
     if (row < garden.size() - 1 && garden[row + 1][col] == p.plant_type && garden_ghost[row + 1][col]) {
         num_ners++;
         p.perimiter -= 2;
@@ -90,6 +86,7 @@ void flood_fill(
             }
         }
     }
+
     if (col > 0 && garden[row][col - 1] == p.plant_type && garden_ghost[row][col - 1]) {
         num_ners++;
         p.perimiter -= 2;
@@ -108,6 +105,7 @@ void flood_fill(
             }
         }
     }
+
     if (col < garden[row].size() - 1 && garden[row][col + 1] == p.plant_type && garden_ghost[row][col + 1]) {
         num_ners++;
         p.perimiter -= 2;
@@ -127,7 +125,7 @@ void flood_fill(
         }
     }
 
-    std::cout << p.plant_type << std::endl;
+    std::cout << p.plant_type << " " << p.sides << std::endl;
     for (size_t i = 0; i < directions.size(); ++i) {
         std::cout << directions[i] << " ";
         unsigned int added_sides = 0;
@@ -135,16 +133,57 @@ void flood_fill(
             p.sides++;
             std::cout << "prev " << directions[(i + directions.size() - 1) % 4] << " next " << directions[(i + 1) % 4] << std::endl;
             if (directions[(i + directions.size() - 1) % 4] == BLOCKED) {
-                // std::cout << "prev" << std::endl;
                 added_sides++;
             }
             if (directions[(i + 1) % 4] == BLOCKED) {
-                // std::cout << "next" << std::endl;
                 added_sides++;
             }
-        /*
-        } else {
-        */
+        }
+
+        if (directions[i] == FLUSH && directions[(i + 2) % 4] == BLOCKED) {
+            std::cout << "info: " << row << " " << col << " " << i << " " << directions[(i + directions.size() - 1) % 4] << " " << directions[(i + 1) % 4] << std::endl;
+            if (directions[(i + directions.size() - 1) % 4] == BLOCKED && 
+                directions[(i + 1) % 4] == BLOCKED) {
+                std::cout << "garden size of row " << garden.size() << std::endl;
+                switch (i) {
+                    case 0:
+                        if ((row == 0) || (row > 0 &&
+                            (col > 0 && garden[row - 1][col - 1] == p.plant_type) || 
+                            (col < garden[row - 1].size() - 1 && garden[row - 1][col + 1] == p.plant_type))) {
+                            std::cout << "hit up " << p.plant_type << std::endl;
+                            p.sides++;
+                        }
+                        break;
+                    case 1:
+                        if ((col == garden[row].size() - 1) || (col < garden[row].size() - 1 &&
+                            (row > 0 && garden[row - 1][col + 1] == p.plant_type) || 
+                            (row < garden.size() - 1 && garden[row + 1][col + 1] == p.plant_type))) {
+                            std::cout << "hit right " << p.plant_type << std::endl;
+                            p.sides++;
+                        }
+                        break;
+                    case 2:
+                        if ((row == garden.size() - 1) || (row < garden.size() - 1 &&
+                            (col > 0 && garden[row + 1][col - 1] == p.plant_type) || 
+                            (col < garden[row + 1].size() - 1 && garden[row + 1][col + 1] == p.plant_type))) {
+                            std::cout << "hit down " << p.plant_type << std::endl;
+                            p.sides++;
+                        }
+
+                        break;
+                    case 3:
+                        if ((col == 0) || (col > 0 && 
+                            (row > 0 && garden[row - 1][col - 1] == p.plant_type) || 
+                            (row < garden.size() - 1 && garden[row + 1][col - 1] == p.plant_type))) {
+                            std::cout << "hit left " << p.plant_type << std::endl;
+                            p.sides++;
+                        }
+
+                        break;
+
+                    default: break;
+                }
+            }
         }
         p.sides += (added_sides + 1) / 2;
     }
@@ -161,37 +200,33 @@ void flood_fill(
         }
         std::cout << std::endl;
     }
-    std::cout << p.sides << std::endl;
     */
+    std::cout << p.sides << std::endl;
+    if (p.sides % 2 != 0) {
+        std::cout << "messed up the balance " << row << " " << col << std::endl;
+    }
 
     // up
     if (row > 0 && garden[row - 1][col] == p.plant_type && !garden_ghost[row - 1][col]) {
         plant_queue.push_back(std::make_pair(row - 1, col));
-
-        // flood_fill(p, garden, garden_ghost, row - 1, col);
     }
 
     // left
     if (col < garden[row].size() - 1 && garden[row][col + 1] == p.plant_type && !garden_ghost[row][col + 1]) {
         plant_queue.push_back(std::make_pair(row, col + 1));
-
-        // flood_fill(p, garden, garden_ghost, row, col + 1);
     }
 
     // down
     if (row < garden.size() - 1 && garden[row + 1][col] == p.plant_type && !garden_ghost[row + 1][col]) {
         plant_queue.push_back(std::make_pair(row + 1, col));
-
-        // flood_fill(p, garden, garden_ghost, row + 1, col);
     }
     
     // right
     if (col > 0 && garden[row][col - 1] == p.plant_type && !garden_ghost[row][col - 1]) {
         plant_queue.push_back(std::make_pair(row, col - 1));
-        // flood_fill(p, garden, garden_ghost, row, col - 1);
     }
 
-
+    // recurse
     flood_fill(p, garden, garden_ghost, plant_queue);
 }
 
@@ -233,6 +268,10 @@ void q12(std::ifstream &input_file) {
                 plant_queue.push_back(std::make_pair(i, j));
                 flood_fill(p, garden, garden_ghost, plant_queue);
                 plots.push_back(p);
+
+                if (p.sides % 2 != 0) {
+                    std::cout << "something fisy at " << i << " " << j << std::endl;
+                }
             }
         }
     }
@@ -241,10 +280,7 @@ void q12(std::ifstream &input_file) {
     std::cout << plots.size() << std::endl;
     for (const auto &p : plots) {
         total_price += p.area * p.sides;
-        if (p.perimiter < p.sides) {
-            std::cout << "asdf" <<std::endl;
-        }
-        // std::cout << p.plant_type << " " << p.area << " " << p.perimiter << " " << p.sides << std::endl;
+        std::cout << p.plant_type << " " << p.area << " " << p.perimiter << " " << p.sides << std::endl;
     }
 
     std::cout << total_price << std::endl;
