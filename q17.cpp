@@ -8,6 +8,8 @@
 
 #include <string>
 #include <vector>
+#include <optional>
+
 
 bool program(std::vector<unsigned char> &output, std::vector<unsigned char> &instructions, unsigned long long registers[3]) {
     for (size_t pc = 0; pc < instructions.size();) {
@@ -85,6 +87,30 @@ bool program(std::vector<unsigned char> &output, std::vector<unsigned char> &ins
     return true;
 }
 
+
+std::optional<unsigned long long> lowest_A(std::vector<unsigned char> &instr, unsigned long long A, ssize_t pc) {
+    if (pc < 0) {
+        return A;
+    }
+
+    A = A << 3;
+    std::optional<unsigned long long> lowest;
+    for (unsigned char move = 0; move < 8; ++move) {
+        unsigned char val = ((A | move) >> (move ^ 3)) & 0b111;
+        // std::cout << (char)(move + '0') << " " << (char)(val + '0') << " " << pc << " " << (char)(instr[pc] + '0') << " " << (instr[pc] == (move ^ val)) << std::endl;
+        if ((move ^ val) == instr[pc]) {
+            std::optional<unsigned long long> contender = lowest_A(instr, A | move, pc - 1);
+            if (contender.has_value()) {
+                if (!lowest.has_value() || contender < lowest) {
+                    lowest = *contender;
+                }
+            }
+        }
+    }
+
+    return lowest;
+}
+
 void q17(std::ifstream &input_file) {
     unsigned long long registers[3];
     std::vector<unsigned char> instructions;
@@ -127,23 +153,15 @@ void q17(std::ifstream &input_file) {
     }
     std::cout << std::endl;
 
+    // this technically works, but ends an interation early
+    unsigned long long new_A = *lowest_A(instructions, 0, instructions.size() - 1);
+    registers[0] = new_A;
+    std::cout << new_A << std::endl;
 
     std::vector<unsigned char> output;
-    for (unsigned long long A = 0x6252C0000000; A < 0x6252FFFFFFFF; ++A) {
-        output.clear();
-        registers[0] = A;
-        registers[1] = 0;
-        registers[2] = 0;
-        if (program(output, instructions, registers)) {
-            std::cout << A << std::endl;
-            break;
-        }
-        /*
-        for (unsigned char c : output) {
-            std::cout << (char)(c + '0') << " ";
-        }
-        */
-
-        // break;
+    program(output, instructions, registers);
+    for (unsigned char c : output) {
+        std::cout << (char)(c + '0') << " ";
     }
+    std::cout << std::endl;
 }
