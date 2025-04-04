@@ -21,6 +21,7 @@ void q15(std::ifstream &input_file);
 void q16(std::ifstream &input_file);
 void q17(std::ifstream &input_file);
 void q18(std::ifstream &input_file);
+void q19(std::ifstream &input_file);
 
 #endif
 
