@@ -48,35 +48,98 @@ void create_path(
     create_path(track, end, path);
 }
 
-char get_adjacent_piece(
+std::pair<char, std::pair<size_t, size_t>> get_adjacent_piece(
         std::vector<std::string> track,
         std::pair<size_t, size_t> position,
         unsigned int direction
 ) {
+    std::pair<size_t, size_t> new_position = position;
     switch (direction) {
         case 0:
             if (position.first != 0) {
-                return track[position.first - 1][position.second];
+                new_position.first--;
+                return std::make_pair(
+                        track[new_position.first][new_position.second],
+                        new_position
+                );
             }
             break;
         case 1:
             if (position.second < track[position.first].size() - 1) {
-                return track[position.first][position.second + 1];
+                new_position.second++;
+                return std::make_pair(
+                        track[new_position.first][new_position.second],
+                        new_position
+                );
             }
             break;
         case 2:
             if (position.first < track.size() - 1) {
-                return track[position.first + 1][position.second];
+                new_position.first++;
+                return std::make_pair(
+                        track[new_position.first][new_position.second],
+                        new_position
+                );
             }
             break;
         case 3:
             if (position.second != 0) {
-                return track[position.first][position.second - 1];
+                new_position.second--;
+                return std::make_pair(
+                        track[new_position.first][new_position.second],
+                        new_position
+                );
             }
             break;
     }
 
-    return -1;
+    return std::make_pair(-1, position);
+}
+
+unsigned int tiles_remaining(std::vector<std::pair<size_t, size_t>> &path, std::pair<size_t, size_t> position) {
+    for (ssize_t i = path.size() - 1; i >= 0; --i) {
+        if (path[i] == position) {
+            return path.size() - i - 1;
+        }
+    }
+
+    return path.size();
+}
+
+unsigned int cheats_at_tile(
+        std::vector<std::string> track,
+        const std::pair<size_t, size_t> start,
+        const std::pair<size_t, size_t> end, 
+        std::vector<std::pair<size_t, size_t>> &path,
+        std::pair<size_t, size_t> tile,
+        unsigned int depth
+) {
+    if (depth == 0) {
+        return 0;
+    }
+
+    unsigned int count = 0;
+    for (size_t j = 0; j < 4; ++j) {
+        std::pair<char, std::pair<size_t, size_t>> first_wall = get_adjacent_piece(track, tile, j);
+        if (first_wall.first == '#') {
+            track[first_wall.second.first][first_wall.second.second] = '.';
+            for (size_t k = 0; k < 4; ++k) {
+                // check if a tile that isn't the one we just came from is part of the track
+                std::pair<char, std::pair<size_t, size_t>> p = get_adjacent_piece(track, first_wall.second, k);
+                if (p.first != '#' && p.second != first_wall.second) {
+                    // we have found our way onto the map!
+                    // find the length to the finish
+                    unsigned int t = tiles_remaining(path, p.second);
+                    // get length 
+                } else if (p.first == '#') {
+                    count += cheats_at_tile(track, start, end, path, p.second, depth - 1);
+                }
+            }
+            track[first_wall.second.first][first_wall.second.second] = '#';
+        }
+    }
+
+    return count;
 }
 
 unsigned int num_cheats(
@@ -85,15 +148,11 @@ unsigned int num_cheats(
         const std::pair<size_t, size_t> end, 
         std::vector<std::pair<size_t, size_t>> &path
 ) {
+    unsigned int count = 0;
     for (size_t i = 0; i < path.size(); ++i) {
-        for (size_t j = 0; j < 4; ++j) {
-            char adjacent_piece = get_adjacent_piece(track, path[i], j);
-            if (adjacent_piece == '#') {
-                // TODO: find cheat
-            }
-        }
+        count += cheats_at_tile(track, start, end, path, path[i], 2);
     }
-    return 0;
+    return count;
 }
 
 void q20(std::ifstream &input_file) {
