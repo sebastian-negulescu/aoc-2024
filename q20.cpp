@@ -130,6 +130,7 @@ unsigned int cheats_at_tile(
         std::pair<char, std::pair<size_t, size_t>> first_wall = get_adjacent_piece(track, tile, j);
         if (first_wall.first == '#') {
             track[first_wall.second.first][first_wall.second.second] = '.';
+            unsigned int shortest_cheat = path.size();
             for (size_t k = 0; k < 4; ++k) {
                 // check if a tile that isn't the one we just came from is part of the track
                 std::pair<char, std::pair<size_t, size_t>> p = get_adjacent_piece(track, first_wall.second, k);
@@ -137,14 +138,18 @@ unsigned int cheats_at_tile(
                     // we have found our way onto the map!
                     // find the length to the finish
                     unsigned int remaining = tiles_remaining(path, p.second);
-                    unsigned int total_tiles = dist + remaining;
+                    unsigned int cheat_length = dist + remaining;
 
-                    if (total_tiles < path.size()) {
-                        count ++;
+                    if (cheat_length < shortest_cheat) {
+                        shortest_cheat = cheat_length;
                     }
                 } else if (p.first == '#') {
                     count += cheats_at_tile(track, start, end, path, dist + 1, first_wall.second, depth - 1);
                 }
+            }
+            if (shortest_cheat < path.size()) {
+                std::cout << shortest_cheat << std::endl;
+                count++;
             }
             track[first_wall.second.first][first_wall.second.second] = '#';
         }
@@ -160,9 +165,9 @@ unsigned int num_cheats(
         std::vector<std::pair<size_t, size_t>> &path
 ) {
     unsigned int count = 0;
-    for (size_t i = 0; i < path.size(); ++i) {
-        count += cheats_at_tile(track, start, end, path, i + 1, path[i], 2);
-    }
+    // for (size_t i = 0; i < path.size(); ++i) {
+        count += cheats_at_tile(track, start, end, path, 12 + 1, path[12], 2);
+    // }
     return count;
 }
 
