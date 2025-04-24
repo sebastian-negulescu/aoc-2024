@@ -106,11 +106,18 @@ unsigned int tiles_remaining(std::vector<std::pair<size_t, size_t>> &path, std::
     return path.size();
 }
 
+void print_track(const std::vector<std::string> &track) {
+    for (const std::string &track_line : track) {
+        std::cout << track_line << std::endl;
+    }
+}
+
 unsigned int cheats_at_tile(
-        std::vector<std::string> track,
+        std::vector<std::string> &track,
         const std::pair<size_t, size_t> start,
         const std::pair<size_t, size_t> end, 
         std::vector<std::pair<size_t, size_t>> &path,
+        size_t dist,
         std::pair<size_t, size_t> tile,
         unsigned int depth
 ) {
@@ -129,10 +136,14 @@ unsigned int cheats_at_tile(
                 if (p.first != '#' && p.second != first_wall.second) {
                     // we have found our way onto the map!
                     // find the length to the finish
-                    unsigned int t = tiles_remaining(path, p.second);
-                    // get length 
+                    unsigned int remaining = tiles_remaining(path, p.second);
+                    unsigned int total_tiles = dist + remaining;
+
+                    if (total_tiles < path.size()) {
+                        count ++;
+                    }
                 } else if (p.first == '#') {
-                    count += cheats_at_tile(track, start, end, path, p.second, depth - 1);
+                    count += cheats_at_tile(track, start, end, path, dist + 1, first_wall.second, depth - 1);
                 }
             }
             track[first_wall.second.first][first_wall.second.second] = '#';
@@ -150,7 +161,7 @@ unsigned int num_cheats(
 ) {
     unsigned int count = 0;
     for (size_t i = 0; i < path.size(); ++i) {
-        count += cheats_at_tile(track, start, end, path, path[i], 2);
+        count += cheats_at_tile(track, start, end, path, i + 1, path[i], 2);
     }
     return count;
 }
@@ -188,8 +199,6 @@ void q20(std::ifstream &input_file) {
     path.push_back(start);
     create_path(track, end, path);
 
-    for (std::pair<size_t, size_t> position : path) {
-        std::cout << position.first << " " << position.second << std::endl;
-    }
+    std::cout << num_cheats(track, start, end, path) << std::endl;
 }
 
