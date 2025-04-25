@@ -7,6 +7,7 @@
 #include <string>
 #include <sstream>
 #include <iostream>
+#include <unordered_set>
 
 void create_path(
         const std::vector<std::string> &track, 
@@ -119,7 +120,8 @@ unsigned int cheats_at_tile(
         std::vector<std::pair<size_t, size_t>> &path,
         size_t dist,
         std::pair<size_t, size_t> tile,
-        unsigned int depth
+        unsigned int depth,
+        std::vector<std::pair<std::pair<size_t, size_t>, unsigned int>> &cheats
 ) {
     if (depth == 0) {
         return 0;
@@ -130,7 +132,6 @@ unsigned int cheats_at_tile(
         std::pair<char, std::pair<size_t, size_t>> first_wall = get_adjacent_piece(track, tile, j);
         if (first_wall.first == '#') {
             track[first_wall.second.first][first_wall.second.second] = '.';
-            unsigned int shortest_cheat = path.size();
             for (size_t k = 0; k < 4; ++k) {
                 // check if a tile that isn't the one we just came from is part of the track
                 std::pair<char, std::pair<size_t, size_t>> p = get_adjacent_piece(track, first_wall.second, k);
@@ -138,18 +139,16 @@ unsigned int cheats_at_tile(
                     // we have found our way onto the map!
                     // find the length to the finish
                     unsigned int remaining = tiles_remaining(path, p.second);
-                    unsigned int cheat_length = dist + remaining;
+                    unsigned int cheat_length = dist + remaining + 2;
 
-                    if (cheat_length < shortest_cheat) {
-                        shortest_cheat = cheat_length;
+                    if (cheat_length < path.size()) {
+                        std::cout << p.second.first << " " << p.second.second << " " << cheat_length << std::endl;
+                        std::cout << remaining << " " << dist << " " << path.size() - cheat_length << std::endl;
+                        cheats.push_back(std::make_pair(p.second, cheat_length));
                     }
                 } else if (p.first == '#') {
-                    count += cheats_at_tile(track, start, end, path, dist + 1, first_wall.second, depth - 1);
+                    count += cheats_at_tile(track, start, end, path, dist + 1, first_wall.second, depth - 1, cheats);
                 }
-            }
-            if (shortest_cheat < path.size()) {
-                std::cout << shortest_cheat << std::endl;
-                count++;
             }
             track[first_wall.second.first][first_wall.second.second] = '#';
         }
@@ -166,7 +165,14 @@ unsigned int num_cheats(
 ) {
     unsigned int count = 0;
     // for (size_t i = 0; i < path.size(); ++i) {
-        count += cheats_at_tile(track, start, end, path, 12 + 1, path[12], 2);
+        std::vector<std::pair<std::pair<size_t, size_t>, unsigned int>> cheats;
+        count += cheats_at_tile(track, start, end, path, 12, path[12], 1, cheats);
+        std::unordered_set<std::string> unique_cheats;
+        for (std::pair<std::pair<size_t, size_t>, unsigned int> &cheat : cheats) {
+            // std::cout << cheat.first.first << " " << cheat.first.second << " " << cheat.second << std::endl;
+            unique_cheats.insert(std::to_string(cheat.first.first) + "," + std::to_string(cheat.first.second));
+        }
+        count += unique_cheats.size();
     // }
     return count;
 }
