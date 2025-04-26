@@ -140,11 +140,12 @@ unsigned int cheats_at_tile(
                     // find the length to the finish
                     unsigned int remaining = tiles_remaining(path, p.second);
                     unsigned int cheat_length = dist + remaining + 2;
+                    unsigned int savings = path.size() - 1 - cheat_length;
 
-                    if (cheat_length < path.size()) {
-                        std::cout << p.second.first << " " << p.second.second << " " << cheat_length << std::endl;
-                        std::cout << remaining << " " << dist << " " << path.size() - cheat_length << std::endl;
-                        cheats.push_back(std::make_pair(p.second, cheat_length));
+                    if (cheat_length < path.size() - 1 && savings == 50) {
+                        // std::cout << p.second.first << " " << p.second.second << " " << cheat_length << std::endl;
+                        // std::cout << remaining << " " << dist << " " << savings << std::endl;
+                        cheats.push_back(std::make_pair(p.second, savings));
                     }
                 } else if (p.first == '#') {
                     count += cheats_at_tile(track, start, end, path, dist + 1, first_wall.second, depth - 1, cheats);
@@ -157,23 +158,45 @@ unsigned int cheats_at_tile(
     return count;
 }
 
+unsigned int manhattan_distance(std::pair<unsigned int, unsigned int> p, std::pair<unsigned int, unsigned int> q) {
+    unsigned int first = p.first > q.first ? p.first - q.first : q.first - p.first;
+    unsigned int second = p.second > q.second ? p.second - q.second : q.second - p.second;
+    return first + second;
+}
+
 unsigned int num_cheats(
         std::vector<std::string> track, 
         const std::pair<size_t, size_t> start,
         const std::pair<size_t, size_t> end, 
         std::vector<std::pair<size_t, size_t>> &path
 ) {
+    // std::cout << tiles_remaining(path, start) << std::endl;
     unsigned int count = 0;
-    // for (size_t i = 0; i < path.size(); ++i) {
+    for (size_t i = 0; i < path.size(); ++i) {
+        for (size_t j = i + 1; j < path.size(); ++j) {
+            std::pair<unsigned int, unsigned int> cheat_start = path[i];
+            std::pair<unsigned int, unsigned int> cheat_end = path[j];
+            unsigned int min_cheat_dist = manhattan_distance(cheat_start, cheat_end);
+            unsigned int min_dist = i + min_cheat_dist + path.size() - 1 - j;
+            unsigned int savings = path.size() - 1 - min_dist;
+            if (min_cheat_dist <= 20 && savings >= 100) {
+                std::cout << min_cheat_dist << " " << min_dist << " " << savings << std::endl;
+                if ((savings - 50) % 2 == 0) {
+                    count ++;
+                }
+            }
+        }
+        /*
         std::vector<std::pair<std::pair<size_t, size_t>, unsigned int>> cheats;
-        count += cheats_at_tile(track, start, end, path, 12, path[12], 1, cheats);
+        count += cheats_at_tile(track, start, end, path, i, path[i], 10, cheats);
         std::unordered_set<std::string> unique_cheats;
         for (std::pair<std::pair<size_t, size_t>, unsigned int> &cheat : cheats) {
             // std::cout << cheat.first.first << " " << cheat.first.second << " " << cheat.second << std::endl;
             unique_cheats.insert(std::to_string(cheat.first.first) + "," + std::to_string(cheat.first.second));
         }
         count += unique_cheats.size();
-    // }
+        */
+    }
     return count;
 }
 
