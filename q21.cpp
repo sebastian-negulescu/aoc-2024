@@ -1,10 +1,8 @@
 #include "questions.h"
 
 #include <vector>
-#include <queue>
 #include <iostream>
 #include <string>
-#include <algorithm>
 
 const std::vector<std::string> num_keypad = {
     "789",
@@ -125,35 +123,100 @@ void get_path(const std::vector<std::string> &keypad, char from, char to, std::v
     bool default_good = true;
     std::pair<size_t, size_t> cur_pos = from_pos;
     for (size_t i = 0; i < std::abs(height) && default_good; ++i) {
-    
+        if (height > 0) {
+            cur_pos.first--;
+        } else {
+            cur_pos.first++;
+        }
+        if (keypad[cur_pos.first][cur_pos.second] == ' ') {
+            default_good = false;
+        }
+    }
+    for (size_t i = 0; i < std::abs(width) && default_good; ++i) {
+        if (width > 0) {
+            cur_pos.second--;
+        } else {
+            cur_pos.second++;
+        }
+        if (keypad[cur_pos.first][cur_pos.second] == ' ') {
+            default_good = false;
+        }
+    }
+
+    if (default_good) {
+        // fill path height_sym, width_sym
+        for (size_t i = 0; i < std::abs(height); ++i) {
+            path.push_back(height_sym);
+        }
+        for (size_t i = 0; i < std::abs(width); ++i) {
+            path.push_back(width_sym);
+        }
+    } else {
+        // fill path width_sym, height_sym
+        for (size_t i = 0; i < std::abs(width); ++i) {
+            path.push_back(width_sym);
+        }
+        for (size_t i = 0; i < std::abs(height); ++i) {
+            path.push_back(height_sym);
+        }
     }
 }
 
 void presses(unsigned int depth, unsigned int max_depth, std::string &sequence, std::vector<char> &dirs) {
-    if (depth > max_depth) {
-        return;
-    }
-
     if (depth == 0) {
         char from = 'A';
         for (char to : sequence) {
             std::vector<char> path;
             get_path(num_keypad, from, to, path);
+            path.push_back('A');
+            if (depth < max_depth) {
+                std::string sub_seq(path.begin(), path.end());
+                presses(depth + 1, max_depth, sub_seq, dirs);
+                std::cout << from << " " << to << std::endl;
+                for (char c : dirs) {
+                    std::cout << c;
+                }
+                std::cout << std::endl;
+            } else {
+                dirs.insert(dirs.end(), path.begin(), path.end());
+            }
+            from = to;
         }
+        return;
+    }
+
+    char from = 'A';
+    for (char to : sequence) {
+        std::vector<char> path;
+        get_path(dir_keypad, from, to, path);
+        path.push_back('A');
+        if (depth < max_depth) {
+            std::string sub_seq(path.begin(), path.end());
+            presses(depth + 1, max_depth, sub_seq, dirs);
+        } else {
+            dirs.insert(dirs.end(), path.begin(), path.end());
+        }
+        from = to;
     }
 }
 
 void q21(std::ifstream &input_file) {
     std::string line;
+    unsigned int total = 0;
     while (std::getline(input_file, line)) {
         std::vector<char> dirs;
 
         presses(0, 0, line, dirs);
         
         for (char c : dirs) {
-            std::cout << c << std::endl;
+            std::cout << c; 
         }
+        std::cout << std::endl;
         std::cout << dirs.size() << std::endl;
-    }
-}
 
+        unsigned int complexity = dirs.size() * std::stoi(line.substr(0, line.size() - 1));
+        std::cout << complexity << std::endl;
+        total += complexity;
+    }
+    std::cout << total << std::endl;
+}
