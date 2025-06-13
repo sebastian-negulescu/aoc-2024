@@ -63,9 +63,9 @@ std::optional<std::pair<size_t, size_t>> move(const std::vector<std::string> &ke
     return {};
 }
 
-void gen_dirs(const std::vector<std::string> &keypad, std::string &sequence, std::string &dirs) {
-    std::pair<ssize_t, ssize_t> start_pos = get_pos(keypad, sequence[0]).value();
-    std::pair<ssize_t, ssize_t> end_pos = get_pos(keypad, sequence[sequence.size() - 1]).value();
+void gen_dirs(const std::vector<std::string> &keypad, char start, char end, std::string &dirs) {
+    std::pair<ssize_t, ssize_t> start_pos = get_pos(keypad, start).value();
+    std::pair<ssize_t, ssize_t> end_pos = get_pos(keypad, end).value();
 
     std::pair<ssize_t, ssize_t> diff = std::make_pair(end_pos.first - start_pos.first, end_pos.second - start_pos.second);
 
@@ -127,19 +127,46 @@ void gen_subseqs(
     }
 }
 
-std::string shortest_sequence(
+void shortest_sequence(
     const unsigned int depth, 
-    const unsigned int max_depth) {
-    return "";
+    const unsigned int max_depth,
+    std::string &dirs
+) {
+    if (depth == max_depth) {
+        return;
+    }
+
+    std::unordered_set<std::string> unique_subseqs;
+    std::unordered_set<std::string> valid_subseqs;
+    gen_subseqs(dirs.size(), dirs, unique_subseqs, valid_subseqs);
+
+    std::string shortest_subseq = "";
+
+    for (const std::string &s : valid_subseqs) {
+        // find the shortest one
+        char c;
+        for (char dir : s.substr(1)) {
+            std::string sub_dirs;
+            gen_dirs(num_keypad, c, dir, sub_dirs);
+            shortest_sequence(0, 2, sub_dirs);
+            c = dir;
+        }
+    }
+
+    return;
 }
 
 void q21(std::ifstream &input_file) {
     std::string line;
     unsigned int total = 0;
     while (std::getline(input_file, line)) {
-        std::unordered_set<std::string> unique_subseqs;
-        std::unordered_set<std::string> valid_subseqs;
-        gen_subseqs(line.size(), line, unique_subseqs, valid_subseqs);
+        char c = line[0];
+        for (char dir : line.substr(1)) {
+            std::string dirs;
+            gen_dirs(num_keypad, c, dir, dirs);
+            shortest_sequence(0, 2, dirs);
+            c = dir;
+        }
     }
     std::cout << total << std::endl;
 }
