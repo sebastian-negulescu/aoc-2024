@@ -142,25 +142,15 @@ void gen_subseqs(
 }
 
 std::unordered_map<std::string, std::string> optimal_sequence;
-std::unordered_map<std::string, std::string> transitions;
+std::unordered_map<std::string, unsigned long long> transitions;
 
-std::string shortest_sequence(
+unsigned long long shortest_sequence(
     const std::vector<std::string> &keypad,
     const unsigned int depth, 
     const std::string &parent_seq,
     std::vector<std::string> &seqs
 ) {
-    std::string combined_seqs = std::accumulate(seqs.begin(), seqs.end(), std::string(), 
-        [](const std::string& a, const std::string& b) -> std::string { 
-            return a + (a.length() > 0 ? "," : "") + b; 
-        } );
-
-    combined_seqs += std::to_string(depth);
-    if (optimal_sequence.contains(combined_seqs)) {
-        // return optimal_sequence[combined_seqs];
-    }
-
-    std::string shortest_seq = "";
+    unsigned long long shortest_seq = 0;
 
     std::pair<size_t, size_t> pos = get_pos(keypad, 'A').value();
     char prev = 'A';
@@ -168,13 +158,13 @@ std::string shortest_sequence(
         // Remove 'A' from end for permutation generation
         std::string seq = seqs[i].substr(0, seqs[i].size() - 1);
 
-        std::cout << parent_seq[i] << " " << seqs[i] << " " << depth << " " << i << " " << parent_seq << std::endl;
         std::pair<size_t, size_t> next_pos = get_pos(keypad, parent_seq[i]).value();
         std::string transition_key = std::string{prev} + std::string{parent_seq[i]} + std::to_string(depth);
         prev = parent_seq[i];
 
         if (transitions.contains(transition_key)) {
             shortest_seq += transitions[transition_key]; 
+            pos = next_pos;
             continue;
         }
 
@@ -186,13 +176,13 @@ std::string shortest_sequence(
             valid_seqs.insert(seq);
         }
 
-        std::string shortest_subseq = "";
+        unsigned long long shortest_subseq = 0;
 
         for (const std::string &valid_seq : valid_seqs) {
             std::string v_seq = valid_seq + 'A';
 
             if (depth == 0) {
-                shortest_subseq = v_seq;
+                shortest_subseq = v_seq.size();
                 break;
             }
 
@@ -205,9 +195,9 @@ std::string shortest_sequence(
                 c = dir;
             }
 
-            std::string shortest_subseq_candidate = shortest_sequence(dir_keypad, depth - 1, v_seq, subseqs);
+            unsigned long long shortest_subseq_candidate = shortest_sequence(dir_keypad, depth - 1, v_seq, subseqs);
 
-            if (shortest_subseq == "" || shortest_subseq_candidate.size() < shortest_subseq.size()) {
+            if (shortest_subseq == 0 || shortest_subseq_candidate < shortest_subseq) {
                 shortest_subseq = shortest_subseq_candidate;
             }
         }
@@ -217,14 +207,12 @@ std::string shortest_sequence(
         pos = next_pos;
     }
 
-    optimal_sequence[combined_seqs] = shortest_seq;
-    std::cout << combined_seqs << " " << shortest_seq << std::endl;
     return shortest_seq;
 }
 
 void q21(std::ifstream &input_file) {
     std::string line;
-    unsigned int total = 0;
+    unsigned long long total = 0;
     while (std::getline(input_file, line)) {
         char c = 'A';
         std::vector<std::string> seq_dirs;
@@ -235,9 +223,8 @@ void q21(std::ifstream &input_file) {
             c = dir;
         }
 
-        std::string result = shortest_sequence(num_keypad, 2, line, seq_dirs);
-        std::cout << result.size() << " " << result << std::endl;
-        unsigned long long score = std::stoi(line.substr(0, line.size() - 1)) * result.size();
+        unsigned long long result = shortest_sequence(num_keypad, 25, line, seq_dirs);
+        unsigned long long score = std::stoi(line.substr(0, line.size() - 1)) * result;
         std::cout << score << std::endl;
         total += score;
     }
