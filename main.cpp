@@ -8,7 +8,7 @@ int main(int argc, char * argv[]) {
     std::ifstream input_file;
     input_file.open(filename);
 
-    q23(input_file);
+    q24(input_file);
 
     input_file.close();
 }
