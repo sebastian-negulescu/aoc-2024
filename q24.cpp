@@ -14,6 +14,7 @@ typedef struct expression_t {
     std::string a;
     std::string b;
     std::string op;
+    std::string reg;
 } expression;
 
 bool solve(
@@ -54,8 +55,124 @@ void load_values(
     }
 }
 
+inline std::string gen_key(const std::string &reg, const std::string &op) {
+    return reg + op;
+}
+
+inline std::string gen_reg(std::string base, unsigned int bit) {
+    return base + std::format("{:02}", bit);
+}
+
+const std::string XOR = "XOR";
+const std::string OR = "OR";
+const std::string AND = "AND";
+const std::string BLANK = "";
+
+
+void validate_adder(
+    std::unordered_map<std::string, bool> &values, 
+    const std::unordered_map<std::string, expression> &expressions
+) {
+    size_t bit = 0;
+
+    std::string x_base = "x";
+    std::string y_base = "y";
+    std::string z_base = "z";
+
+    std::string x = gen_reg(x_base, bit);
+    std::string y = gen_reg(y_base, bit);
+    std::string z = gen_reg(z_base, bit);
+
+    // half-adder validation
+
+    expression e = expressions.at(gen_key(x, XOR));
+    assert(e.reg == z);
+    e = expressions.at(gen_key(x, AND));
+
+    std::string next_reg = e.reg;
+
+    for (bit = 1; bit < 45; ++bit) {
+        x = gen_reg(x_base, bit);
+        y = gen_reg(y_base, bit);
+        z = gen_reg(z_base, bit);
+
+        std::string first = expressions.at(gen_key(x, XOR)).reg;
+
+        expression z_back = expressions.at(gen_key(z, BLANK));
+        expression two = z_back;
+
+        if (expressions.contains(gen_key(first, XOR))) {
+            two = expressions.at(gen_key(first, XOR));
+        }
+
+        if (expressions.contains(gen_key(next_reg, XOR))) {
+            two = expressions.at(gen_key(next_reg, XOR));
+        }
+
+        if (two.a != first && two.b != first) {
+            std::cout << "swap: " << first << std::endl;
+            if (two.a == next_reg) {
+                first = two.b;
+            } else {
+                first = two.a;
+            }
+        }
+
+        if (two.a != next_reg && two.b != next_reg) {
+            std::cout << "swap: " << next_reg << std::endl;
+            if (two.a == first) {
+                next_reg = two.b;
+            } else {
+                next_reg = two.a;
+            }
+        }
+
+        if (two.reg != z) {
+            std::cout << "swap: " << two.reg << std::endl;
+        }
+
+        assert(expressions.contains(gen_key(first, AND)));
+        assert(expressions.contains(gen_key(next_reg, AND)));
+
+        std::string fourth = expressions.at(gen_key(first, AND)).reg;
+        std::string third = expressions.at(gen_key(x, AND)).reg;
+
+        expression five;
+
+        if (expressions.contains(gen_key(fourth, OR))) {
+            five = expressions.at(gen_key(fourth, OR));
+        }
+
+        if (expressions.contains(gen_key(third, OR))) {
+            five = expressions.at(gen_key(third, OR));
+        }
+
+        if (five.a != fourth && five.b != fourth) {
+            std::cout << "swap: " << fourth << std::endl;
+            if (five.a == third) {
+                fourth = five.b;
+            } else {
+                fourth = five.a;
+            }
+        }
+
+        if (five.a != third && five.b != third) {
+            std::cout << "swap: " << third << std::endl;
+            if (five.a == fourth) {
+                third = five.b;
+            } else {
+                third = five.a;
+            }
+        }
+
+        next_reg = expressions.at(gen_key(fourth, OR)).reg;
+    }
+}
+
 void q24(std::ifstream &input_file) {
     std::string line;
+
+    std::unordered_map<std::string, bool> values; 
 
     while (std::getline(input_file, line)) {
         if (line == "") {
@@ -65,7 +182,7 @@ void q24(std::ifstream &input_file) {
         std::string reg_name = line.substr(0, 3);
         bool reg_value = std::stoi(line.substr(5, 1)) == 1;
 
-        // values[reg_name] = reg_value;
+        values[reg_name] = reg_value;
     }
 
     std::unordered_map<std::string, expression> expressions;
@@ -89,34 +206,20 @@ void q24(std::ifstream &input_file) {
             z_regs.push_back(reg);
         }
 
-        expression e{a, b, op};
-        expressions[reg] = e;
+        expression e{a, b, op, reg};
+        std::string a_key = gen_key(a, op);
+        std::string b_key = gen_key(b, op);
+        std::string reg_key = gen_key(reg, BLANK);
+
+        assert(!expressions.contains(a_key));
+        assert(!expressions.contains(b_key));
+        assert(!expressions.contains(reg_key));
+
+        expressions[a_key] = e;
+        expressions[b_key] = e;
+        expressions[reg_key] = e;
     }
 
-    for (size_t i = 0; i < 100; ++i) {
-        std::unordered_map<std::string, bool> values;
-
-        unsigned long long x = 0;
-        unsigned long long y = 0;
-        size_t bits = 45;
-        for (size_t bit = 0; bit < bits; ++bit) {
-            x = (x << 1) | std::rand() % 2;
-            y = (y << 1) | std::rand() % 2;
-        }
-
-        unsigned int z = x + y;
-
-        load_values(values, "x", x, bits);
-        load_values(values, "y", y, bits);
-
-        unsigned long long total = 0;
-        for (auto &z_reg : z_regs) {
-            bool value = solve(expressions, values, z_reg);
-            unsigned int position = std::stoi(z_reg.substr(1, z_reg.size() - 1));
-            total += (unsigned long long) value << position;
-        }
-        std::cout << total << std::endl;
-        std::cout << std::bitset<46>(total ^ z) << std::endl;
-    }
+    validate_adder(values, expressions);
 }
 
