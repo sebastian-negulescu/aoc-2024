@@ -27,6 +27,7 @@ void q21(std::ifstream &input_file);
 void q22(std::ifstream &input_file);
 void q23(std::ifstream &input_file);
 void q24(std::ifstream &input_file);
+void q25(std::ifstream &input_file);
 
 #endif
 
